@@ -80,10 +80,10 @@
 
     <properties>
         <revision>25.3.0-SNAPSHOT</revision>
-        <spark.version>2.4.8</spark.version>
-        <spark.major.version>2.4</spark.major.version>
-        <scala.version>2.11.12</scala.version>
-        <scala.major.version>2.11</scala.major.version>
+        <spark.version>3.2.0</spark.version>
+        <spark.major.version>3.2</spark.major.version>
+        <scala.version>2.12.18</scala.version>
+        <scala.major.version>2.12</scala.major.version>
         <libthrift.version>0.16.0</libthrift.version>
         <arrow.version>15.0.2</arrow.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -842,6 +842,9 @@
         </profile>
         <profile>
             <id>spark-3.2</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <properties>
                 <spark.version>3.2.0</spark.version>
                 <spark.major.version>3.2</spark.major.version>
@@ -851,9 +854,6 @@
         </profile>
         <profile>
             <id>spark-3.3</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <properties>
                 <spark.version>3.3.0</spark.version>
                 <spark.major.version>3.3</spark.major.version>

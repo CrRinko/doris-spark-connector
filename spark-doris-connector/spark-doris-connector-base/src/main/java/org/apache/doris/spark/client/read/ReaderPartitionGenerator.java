@@ -80,7 +80,12 @@ public class ReaderPartitionGenerator {
         String sql = "SELECT " + finalReadColumnString + " FROM `" + db + "`.`" + table + "`" + finalWhereClauseString;
         LOG.info("get query plan for table " + db + "." + table + ", sql: " + sql);
         QueryPlan queryPlan = frontend.getQueryPlan(db, table, sql);
-        Map<String, List<Long>> beToTablets = mappingBeToTablets(queryPlan);
+        Map<String, List<Long>> beToTablets;
+        if (config.contains(DorisOptions.DORIS_BENODES)) {
+            beToTablets = overrideBeNodes(queryPlan, config.getValue(DorisOptions.DORIS_BENODES));
+        } else {
+            beToTablets = mappingBeToTablets(queryPlan);
+        }
         int maxTabletSize = config.getValue(DorisOptions.DORIS_TABLET_SIZE);
         return distributeTabletsToPartitions(db, table, beToTablets, queryPlan.getOpaqued_query_plan(), maxTabletSize,
                 finalReadColumns, filters, config, limit, datetimeJava8ApiEnabled);
@@ -107,6 +112,29 @@ public class ReaderPartitionGenerator {
             }
             beToTablets.get(targetBe).add(Long.parseLong(tabletId));
         });
+        return beToTablets;
+    }
+
+    private static Map<String, List<Long>> overrideBeNodes(QueryPlan queryPlan, String benodes) {
+        String[] beNodesArr = benodes.split(",");
+        List<String> beNodeList = Arrays.stream(beNodesArr)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+        if (beNodeList.isEmpty()) {
+            throw new IllegalArgumentException("doris.benodes is configured but no valid BE nodes found");
+        }
+        List<Long> allTablets = new ArrayList<>();
+        queryPlan.getPartitions().forEach((tabletId, tabletInfos) -> {
+            allTablets.add(Long.parseLong(tabletId));
+        });
+        Map<String, List<Long>> beToTablets = new HashMap<>();
+        for (int i = 0; i < allTablets.size(); i++) {
+            String beNode = beNodeList.get(i % beNodeList.size());
+            beToTablets.computeIfAbsent(beNode, k -> new ArrayList<>()).add(allTablets.get(i));
+        }
+        LOG.info("Override BE nodes with doris.benodes: {}, total tablets: {}, be count: {}",
+                benodes, allTablets.size(), beNodeList.size());
         return beToTablets;
     }
 
