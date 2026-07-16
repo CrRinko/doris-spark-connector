@@ -104,7 +104,8 @@ public abstract class AbstractStreamLoadProcessor<R> extends DorisWriter<R> impl
         this.database = dbTableArr[0].replaceAll("`", "").trim();
         this.table = dbTableArr[1].replaceAll("`", "").trim();
         this.frontend = new DorisFrontendClient(config);
-        this.autoRedirect = config.getValue(DorisOptions.DORIS_SINK_AUTO_REDIRECT);
+        this.autoRedirect = config.getValue(DorisOptions.DORIS_SINK_AUTO_REDIRECT)
+                && !config.contains(DorisOptions.DORIS_BENODES);
         this.backendHttpClient = autoRedirect ? null : new DorisBackendHttpClient(getBackends());
         this.isHttpsEnabled = config.getValue(DorisOptions.DORIS_ENABLE_HTTPS);
         this.properties = config.getSinkProperties();
